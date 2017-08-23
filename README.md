@@ -58,8 +58,7 @@ PyTorch implementation of Conditional Deep Convolutional Generative Adversarial 
 
 * Generated images varying latent variable
     * Odd rows: female / Even rows: male
-<img src = 'CelebA_cDCGAN_results/CelebA_cDCGAN_noise_morph.png'>
-
+    ![N](CelebA_cDCGAN_results/CelebA_cDCGAN_noise_morph.png)
 
 ### References
 1. https://wiseodd.github.io/techblog/2016/12/24/conditional-gan-tensorflow/
