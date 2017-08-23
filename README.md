@@ -44,6 +44,7 @@ PyTorch implementation of Conditional Deep Convolutional Generative Adversarial 
     
 ### Results
 * Adam optimizer is used. Learning rate = 0.0002 both for generator and discriminator, batch size = 128, # of epochs = 20:
+    * Images are generated with fixed noise and varying gender label (1st, 3rd rows: female / 2nd, 4th rows: male)
 <table align='center'>
 <tr align='center'>
 <td> GAN losses</td>
@@ -56,6 +57,7 @@ PyTorch implementation of Conditional Deep Convolutional Generative Adversarial 
 </table>
 
 * Generated images varying latent variable
+    * Odd rows: female / Even rows: male
 <img src = 'CelebA_cDCGAN_results/CelebA_cDCGAN_noise_morph.png'>
 
 
