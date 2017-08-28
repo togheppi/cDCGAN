@@ -17,13 +17,14 @@ PyTorch implementation of Conditional Deep Convolutional Generative Adversarial 
 
 ### Results
 * Adam optimizer is used. Learning rate for generator = 0.0002 and 0.0001 for discriminator, batch size = 128, # of epochs = 20:
+* Loss values are plotted using [Tensorboard in PyTorch](https://github.com/yunjey/pytorch-tutorial/tree/master/tutorials/04-utils/tensorboard).
 <table align='center'>
 <tr align='center'>
 <td> GAN losses</td>
 <td> Generated images</td>
 </tr>
 <tr>
-<td><img src = 'MNIST_cDCGAN_results/MNIST_cDCGAN_losses_epochs_20.gif'>
+<td><img src = 'MNIST_cDCGAN_results/MNIST_cDCGAN_losses_tensorboard.png'>
 <td><img src = 'MNIST_cDCGAN_results/MNIST_cDCGAN_epochs_20.gif'>
 </tr>
 </table>
@@ -44,7 +45,6 @@ PyTorch implementation of Conditional Deep Convolutional Generative Adversarial 
     
 ### Results
 * Adam optimizer is used. Learning rate = 0.0002 both for generator and discriminator, batch size = 128, # of epochs = 20:
-* Loss values are plotted using [Tensorboard in PyTorch](https://github.com/yunjey/pytorch-tutorial/tree/master/tutorials/04-utils/tensorboard).
 * Images are generated with fixed noise and varying gender label (1st, 3rd rows: female / 2nd, 4th rows: male)
 <table align='center'>
 <tr align='center'>
