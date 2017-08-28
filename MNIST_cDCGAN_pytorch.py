@@ -7,6 +7,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import imageio
+from logger import Logger
+from draw_convnet import DrawNet
 
 # Parameters
 image_size = 32
@@ -21,7 +23,7 @@ learning_rate = 0.0002
 betas = (0.5, 0.999)
 batch_size = 128
 num_epochs = 20
-data_dir = '../Data/MNIST_data/'
+data_dir = '../../Data/MNIST_data/'
 save_dir = 'MNIST_cDCGAN_results/'
 
 # MNIST dataset
@@ -37,6 +39,17 @@ mnist_data = dsets.MNIST(root=data_dir,
 data_loader = torch.utils.data.DataLoader(dataset=mnist_data,
                                           batch_size=batch_size,
                                           shuffle=True)
+
+
+# For logger
+def to_np(x):
+    return x.data.cpu().numpy()
+
+
+def to_var(x):
+    if torch.cuda.is_available():
+        x = x.cuda()
+    return Variable(x)
 
 
 # De-normalization
@@ -256,6 +269,24 @@ D = Discriminator(D_input_dim, label_dim, num_filters[::-1], D_output_dim)
 G.cuda()
 D.cuda()
 
+# Draw net
+G_net = DrawNet([1, 1], G_input_dim, num_filters, [image_size, image_size], G_output_dim, 4, 'Deconv2D', save_dir)
+D_net = DrawNet([image_size, image_size], D_input_dim, num_filters[::-1], [1, 1], D_output_dim, 4, 'Conv2D', save_dir)
+G_net.draw()
+D_net.draw()
+
+# Set the logger
+D_log_dir = save_dir + 'D_logs'
+G_log_dir = save_dir + 'G_logs'
+if not os.path.exists(D_log_dir):
+    os.mkdir(D_log_dir)
+D_logger = Logger(D_log_dir)
+
+if not os.path.exists(G_log_dir):
+    os.mkdir(G_log_dir)
+G_logger = Logger(G_log_dir)
+
+
 # Loss function
 criterion = torch.nn.BCELoss()
 
@@ -290,6 +321,7 @@ fill = torch.zeros([label_dim, label_dim, image_size, image_size])
 for i in range(label_dim):
     fill[i, i, :, :] = 1
 
+step = 0
 for epoch in range(num_epochs):
     D_losses = []
     G_losses = []
@@ -345,7 +377,6 @@ for epoch in range(num_epochs):
         G_loss = criterion(D_fake_decision, y_real_)
 
         # Back propagation
-        # D.zero_grad()
         G.zero_grad()
         G_loss.backward()
         G_optimizer.step()
@@ -356,6 +387,11 @@ for epoch in range(num_epochs):
 
         print('Epoch [%d/%d], Step [%d/%d], D_loss: %.4f, G_loss: %.4f'
               % (epoch+1, num_epochs, i+1, len(data_loader), D_loss.data[0], G_loss.data[0]))
+
+        # ============ TensorBoard logging ============#
+        D_logger.scalar_summary('losses', D_loss.data[0], step + 1)
+        G_logger.scalar_summary('losses', G_loss.data[0], step + 1)
+        step += 1
 
     D_avg_loss = torch.mean(torch.FloatTensor(D_losses))
     G_avg_loss = torch.mean(torch.FloatTensor(G_losses))

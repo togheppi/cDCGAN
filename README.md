@@ -29,7 +29,7 @@ PyTorch implementation of Conditional Deep Convolutional Generative Adversarial 
 </table>
 
 ## Generating CelebA dataset
-* 108x108 center region of CelebA image is cropped, and resized to 64x64 size image
+* Center region of CelebA image is cropped (108x108 for male/female, 150x150 for black/brown hair) and resized to 64x64 size image
 
 ### Network architecture
 * Generator
@@ -44,21 +44,37 @@ PyTorch implementation of Conditional Deep Convolutional Generative Adversarial 
     
 ### Results
 * Adam optimizer is used. Learning rate = 0.0002 both for generator and discriminator, batch size = 128, # of epochs = 20:
-    * Images are generated with fixed noise and varying gender label (1st, 3rd rows: female / 2nd, 4th rows: male)
+* Loss values are plotted using [Tensorboard in PyTorch](https://github.com/yunjey/pytorch-tutorial/tree/master/tutorials/04-utils/tensorboard).
+* Images are generated with fixed noise and varying gender label (1st, 3rd rows: female / 2nd, 4th rows: male)
 <table align='center'>
 <tr align='center'>
 <td> GAN losses</td>
 <td> Generated images</td>
 </tr>
 <tr>
-<td><img src = 'CelebA_cDCGAN_results/CelebA_cDCGAN_losses_epochs_20.gif'>
+<td><img src = 'CelebA_cDCGAN_results/CelebA_cDCGAN_losses_tensorboard.png'>
 <td><img src = 'CelebA_cDCGAN_results/CelebA_cDCGAN_epochs_20.gif'>
+</tr>
+</table>
+
+* Images are generated with fixed noise and varying hair color label (1st, 3rd rows: brown hair / 2nd, 4th rows: black hair)
+* Only 87,772 images (black hair: 47,336 / brown hair: 40,436) are sampled from original CelebA data for training.
+<table align='center'>
+<tr align='center'>
+<td> GAN losses</td>
+<td> Generated images</td>
+</tr>
+<tr>
+<td><img src = 'CelebA_cDCGAN_hair_results/CelebA_cDCGAN_losses_tensorboard.png'>
+<td><img src = 'CelebA_cDCGAN_hair_results/CelebA_cDCGAN_epochs_20.gif'>
 </tr>
 </table>
 
 * Generated images varying latent variable
     * Odd rows: female / Even rows: male
     ![N](CelebA_cDCGAN_results/CelebA_cDCGAN_noise_morph.png)
+    * Odd rows: brown hair / Even rows: black hair
+    ![N](CelebA_cDCGAN_hair_results/CelebA_cDCGAN_noise_morph.png)
 
 ### References
 1. https://wiseodd.github.io/techblog/2016/12/24/conditional-gan-tensorflow/

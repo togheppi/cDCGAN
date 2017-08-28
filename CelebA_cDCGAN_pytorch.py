@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import os
 import imageio
 import pickle
+from logger import Logger
+
 
 # Parameters
 image_size = 64
@@ -22,8 +24,10 @@ learning_rate = 0.0002
 betas = (0.5, 0.999)
 batch_size = 128
 num_epochs = 20
-data_dir = '../Data/celebA_data/resized_celebA/'
-save_dir = 'CelebA_cDCGAN_results/'
+# data_dir = '../Data/celebA_data/resized_celebA/'
+# save_dir = 'CelebA_cDCGAN_results/'
+data_dir = '../Data/celebA_data/resized_celebA_hair/'
+save_dir = 'CelebA_cDCGAN_hair_results/'
 
 # CelebA dataset
 transform = transforms.Compose([transforms.Scale(image_size),
@@ -36,6 +40,17 @@ celebA_data.imgs.sort()
 data_loader = torch.utils.data.DataLoader(dataset=celebA_data,
                                           batch_size=batch_size,
                                           shuffle=False)
+
+
+# For logger
+def to_np(x):
+    return x.data.cpu().numpy()
+
+
+def to_var(x):
+    if torch.cuda.is_available():
+        x = x.cuda()
+    return Variable(x)
 
 
 # De-normalization
@@ -294,7 +309,7 @@ def plot_morp_result(generator, save=False, save_dir='CelebA_cDCGAN_results/', s
     if save:
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
-        save_fn = save_dir + 'CelebA_cDCGAN_noise_morph.png'
+        save_fn = save_dir + 'CelebA_cDCGAN_noise_morp.png'
         plt.savefig(save_fn)
 
     if show:
@@ -309,6 +324,18 @@ D = Discriminator(D_input_dim, label_dim, num_filters[::-1], D_output_dim)
 G.cuda()
 D.cuda()
 
+# Set the logger
+D_log_dir = save_dir + 'D_logs'
+G_log_dir = save_dir + 'G_logs'
+if not os.path.exists(D_log_dir):
+    os.mkdir(D_log_dir)
+D_logger = Logger(D_log_dir)
+
+if not os.path.exists(G_log_dir):
+    os.mkdir(G_log_dir)
+G_logger = Logger(G_log_dir)
+
+
 # Loss function
 criterion = torch.nn.BCELoss()
 
@@ -317,11 +344,15 @@ G_optimizer = torch.optim.Adam(G.parameters(), lr=learning_rate, betas=betas)
 D_optimizer = torch.optim.Adam(D.parameters(), lr=learning_rate, betas=betas)
 
 # Load gender labels
-with open('../Data/celebA_data/gender_label.pkl', 'rb') as fp:
-    gender = pickle.load(fp)
-gender = torch.LongTensor(gender).squeeze()
+# with open('../Data/celebA_data/gender_label.pkl', 'rb') as fp:
+#     gender = pickle.load(fp)
+# gender = torch.LongTensor(gender).squeeze()
+# Load hair color labels
+with open('../Data/celebA_data/hair_label.pkl', 'rb') as fp:
+    label = pickle.load(fp)
+label = torch.LongTensor(label).squeeze()
 
-# gender label preprocess
+# Label preprocess
 onehot = torch.zeros(label_dim, label_dim)
 onehot = onehot.scatter_(1, torch.LongTensor([0, 1]).view(label_dim, 1), 1).view(label_dim, label_dim, 1, 1)
 fill = torch.zeros([label_dim, label_dim, image_size, image_size])
@@ -344,6 +375,7 @@ fixed_label = onehot[fixed_label]
 D_avg_losses = []
 G_avg_losses = []
 
+step = 0
 for epoch in range(num_epochs):
     D_losses = []
     G_losses = []
@@ -362,8 +394,8 @@ for epoch in range(num_epochs):
         # labels
         y_real_ = Variable(torch.ones(mini_batch).cuda())
         y_fake_ = Variable(torch.zeros(mini_batch).cuda())
-        genders = gender[mini_batch*i:mini_batch*(i+1)]
-        c_fill_ = Variable(fill[genders].cuda())
+        c_label_ = label[mini_batch*i:mini_batch*(i+1)]
+        c_fill_ = Variable(fill[c_label_].cuda())
 
         # Train discriminator with real data
         D_real_decision = D(x_, c_fill_).squeeze()
@@ -374,8 +406,8 @@ for epoch in range(num_epochs):
         z_ = Variable(z_.cuda())
 
         c_ = (torch.rand(mini_batch, 1) * label_dim).type(torch.LongTensor).squeeze()
-        c_gender_ = Variable(onehot[c_].cuda())
-        gen_image = G(z_, c_gender_)
+        c_onehot_ = Variable(onehot[c_].cuda())
+        gen_image = G(z_, c_onehot_)
 
         c_fill_ = Variable(fill[c_].cuda())
         D_fake_decision = D(gen_image, c_fill_).squeeze()
@@ -392,8 +424,8 @@ for epoch in range(num_epochs):
         z_ = Variable(z_.cuda())
 
         c_ = (torch.rand(mini_batch, 1) * label_dim).type(torch.LongTensor).squeeze()
-        c_gender_ = Variable(onehot[c_].cuda())
-        gen_image = G(z_, c_gender_)
+        c_onehot_ = Variable(onehot[c_].cuda())
+        gen_image = G(z_, c_onehot_)
 
         c_fill_ = Variable(fill[c_].cuda())
         D_fake_decision = D(gen_image, c_fill_).squeeze()
@@ -411,6 +443,11 @@ for epoch in range(num_epochs):
         print('Epoch [%d/%d], Step [%d/%d], D_loss: %.4f, G_loss: %.4f'
               % (epoch+1, num_epochs, i+1, len(data_loader), D_loss.data[0], G_loss.data[0]))
 
+        # ============ TensorBoard logging ============#
+        D_logger.scalar_summary('losses', D_loss.data[0], step + 1)
+        G_logger.scalar_summary('losses', G_loss.data[0], step + 1)
+        step += 1
+
     D_avg_loss = torch.mean(torch.FloatTensor(D_losses))
     G_avg_loss = torch.mean(torch.FloatTensor(G_losses))
 
@@ -418,10 +455,10 @@ for epoch in range(num_epochs):
     D_avg_losses.append(D_avg_loss)
     G_avg_losses.append(G_avg_loss)
 
-    plot_loss(D_avg_losses, G_avg_losses, epoch, save=True)
+    plot_loss(D_avg_losses, G_avg_losses, epoch, save=True, save_dir=save_dir)
 
     # Show result for fixed noise
-    plot_result(G, fixed_noise, fixed_label, epoch, save=True)
+    plot_result(G, fixed_noise, fixed_label, epoch, save=True, save_dir=save_dir)
 
 # Make gif
 loss_plots = []
@@ -438,4 +475,4 @@ imageio.mimsave(save_dir + 'CelebA_cDCGAN_losses_epochs_{:d}'.format(num_epochs)
 imageio.mimsave(save_dir + 'CelebA_cDCGAN_epochs_{:d}'.format(num_epochs) + '.gif', gen_image_plots, fps=5)
 
 # plot noise morp result
-plot_morp_result(G, save=True)
+plot_morp_result(G, save=True, save_dir=save_dir)
