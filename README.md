@@ -24,7 +24,7 @@ PyTorch implementation of Conditional Deep Convolutional Generative Adversarial 
 <td> Generated images</td>
 </tr>
 <tr>
-<td><img src = 'MNIST_cDCGAN_results/MNIST_cDCGAN_losses_tensorboard.png'>
+<td><img src = 'MNIST_cDCGAN_results/MNIST_cDCGAN_losses_tensorboard.PNG'>
 <td><img src = 'MNIST_cDCGAN_results/MNIST_cDCGAN_epochs_20.gif'>
 </tr>
 </table>
